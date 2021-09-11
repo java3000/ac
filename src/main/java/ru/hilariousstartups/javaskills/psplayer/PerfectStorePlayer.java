@@ -22,25 +22,19 @@ public class PerfectStorePlayer implements ApplicationListener<ApplicationReadyE
 
     private String serverUrl;
 
-    //* 2 2 53 1000 0 0.99 s = 2445748.0 / 2056000.0 / 423332.0 / -33584.0
-    //2 2 53 1000 0 0.99 j = 4356908.0 /  5162000.0 / 151200.0 / -956292.0 / полок: 6 / обслужено: 10357/ продано продуктов:73595
-    //2 2 53 500 0 0.99 j = 4658163.0 / 5459000.0 / 151200.0 / -952037.0 / полок: 0 / обслужено: 11026 / продано продуктов:84458
-    //2 2 53 250 0 0.99 j =  4722090.0 / 6766750.0 / 151200.0 / -2195860.0 / полок: 7 / обслужено: 10660 / 78060
-    //2 2 53 2000 0 0.99 j =
+    //* 2 2 56 1000 5 0.99 s = 1.9749024E7 / 1.754E7 / 402738.0 / 1806286.0
+    //* 3 3 56 900 5 0.99 s = 1.8786107E7 / 1.65276E7 / 402780.0 / 1855727.0
+    //* 4 4 65 1000 5 0.99 s = 1.5543896E7 / 1.33375E7 / 402752.0 / 1803644.0
 
-    //* 2 2 53 1000 10 0.99 j = 8007804.0 / 7385400.0 / 143505.0 / 478899.0
-
-    int initialRacksRating = 2;
-    int rackRating = 2;
-    int overhead = 53;
-    int initialQuantity = 1000;
-    int quantity = 10;
-    int rackCapacity = 20;
-    float persentLevel = 0.99f;
+    int initialRacksRating = 4;
+    int rackRating = 4;
+    int overhead = 65; //56
+    int initialQuantity = 900;
+    int quantity = 3; //5
     int customersTotal = 0;
     int productsTotal = 0;
     int myRacksCount = 0;
-    HireEmployeeCommand.ExperienceEnum exp = HireEmployeeCommand.ExperienceEnum.JUNIOR;
+    HireEmployeeCommand.ExperienceEnum exp = HireEmployeeCommand.ExperienceEnum.SENIOR;
 
     List<Employee> setToLine = new ArrayList<>();
 

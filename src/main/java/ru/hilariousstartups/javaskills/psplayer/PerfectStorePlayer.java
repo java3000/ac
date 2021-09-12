@@ -23,12 +23,14 @@ public class PerfectStorePlayer implements ApplicationListener<ApplicationReadyE
     private String serverUrl;
 
     //* 3 3 56 800 s = 1.8803106E7 / 1.64842E7 / 402780.0 / 1916126.0
-    //* 3 3 65 800 s = 1.6664654E7 / 1.41954E7 / 402815.0 / 2066439.0
+    //* 3 3 65 800 s = 1.6643544E7 / 1.3953E7 / 402822.0 / 2287722.0
+    //* 3 3 66 810 s = 1.6756676E7 / 1.431758E7 / 402829.0 / 2036267.0
+    //* 3 3 66 810 s = 1.6680877E7 / 1.412385E7 / 402759.0 / 2154268.0
 
     int initialRacksRating = 3;
     int rackRating = 3;
-    int overhead = 65; //56
-    int initialQuantity = 800;
+    int overhead = 66; //56
+    int initialQuantity = 810;
 
     HireEmployeeCommand.ExperienceEnum exp = HireEmployeeCommand.ExperienceEnum.SENIOR;
 

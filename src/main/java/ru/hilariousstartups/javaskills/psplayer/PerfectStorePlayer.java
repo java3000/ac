@@ -22,25 +22,15 @@ public class PerfectStorePlayer implements ApplicationListener<ApplicationReadyE
 
     private String serverUrl;
 
-    //* 2 2 53 1000 0 0.99 s = 2445748.0 / 2056000.0 / 423332.0 / -33584.0
-    //2 2 53 1000 0 0.99 j = 4356908.0 /  5162000.0 / 151200.0 / -956292.0 / полок: 6 / обслужено: 10357/ продано продуктов:73595
-    //2 2 53 500 0 0.99 j = 4658163.0 / 5459000.0 / 151200.0 / -952037.0 / полок: 0 / обслужено: 11026 / продано продуктов:84458
-    //2 2 53 250 0 0.99 j =  4722090.0 / 6766750.0 / 151200.0 / -2195860.0 / полок: 7 / обслужено: 10660 / 78060
-    //2 2 53 2000 0 0.99 j =
+    //* 3 3 56 800 s = 1.8803106E7 / 1.64842E7 / 402780.0 / 1916126.0
+    //* 3 3 65 800 s = 1.6664654E7 / 1.41954E7 / 402815.0 / 2066439.0
 
-    //* 2 2 53 1000 10 0.99 j = 8007804.0 / 7385400.0 / 143505.0 / 478899.0
+    int initialRacksRating = 3;
+    int rackRating = 3;
+    int overhead = 65; //56
+    int initialQuantity = 800;
 
-    int initialRacksRating = 2;
-    int rackRating = 2;
-    int overhead = 53;
-    int initialQuantity = 1000;
-    int quantity = 10;
-    int rackCapacity = 20;
-    float persentLevel = 0.99f;
-    int customersTotal = 0;
-    int productsTotal = 0;
-    int myRacksCount = 0;
-    HireEmployeeCommand.ExperienceEnum exp = HireEmployeeCommand.ExperienceEnum.JUNIOR;
+    HireEmployeeCommand.ExperienceEnum exp = HireEmployeeCommand.ExperienceEnum.SENIOR;
 
     List<Employee> setToLine = new ArrayList<>();
 
@@ -76,41 +66,15 @@ public class PerfectStorePlayer implements ApplicationListener<ApplicationReadyE
 
                 placePopularProductsOnRack(currentWorldResponse, request);
                 putCachersOnLine(currentWorldResponse, request);
-                //hireEmployees(currentWorldResponse, request);
                 hireFireEmployees(currentWorldResponse, request);
 
                 currentWorldResponse = psApiClient.tick(request);
             }
             while (!currentWorldResponse.isGameOver());
 
-            log.info("полок: " + myRacksCount);
-            log.info("обслужено: " + customersTotal);
-            log.info("продано продуктов:" + productsTotal);
             log.info("Я заработал " + (currentWorldResponse.getIncome() - currentWorldResponse.getSalaryCosts() - currentWorldResponse.getStockCosts()) + "руб.");
         } catch (ApiException e) {
             log.error(e.getMessage(), e);
-        }
-
-    }
-
-    private void hireEmployees(CurrentWorldResponse currentWorldResponse, CurrentTickRequest request) {
-        List<Employee> employees = currentWorldResponse.getEmployees();
-        List<CheckoutLine> freeCasses = currentWorldResponse.getCheckoutLines()
-                .stream()
-                .filter(line -> line.getEmployeeId() == null)
-                .collect(Collectors.toList());
-
-        if (employees.size() < (currentWorldResponse.getCheckoutLines().size() * 3)) {
-            if (!freeCasses.isEmpty()) {
-                List<HireEmployeeCommand> hireEmployeeCommands = new ArrayList<>();
-                for (int i = 0; i < freeCasses.size(); i++) {
-                    HireEmployeeCommand hireEmployeeCommand = new HireEmployeeCommand();
-                    hireEmployeeCommand.setExperience(exp);
-                    hireEmployeeCommand.setCheckoutLineId(freeCasses.get(i).getId());
-                    hireEmployeeCommands.add(hireEmployeeCommand);
-                }
-                request.setHireEmployeeCommands(hireEmployeeCommands);
-            }
         }
     }
 
@@ -137,9 +101,9 @@ public class PerfectStorePlayer implements ApplicationListener<ApplicationReadyE
         if (!notOnLine.isEmpty()) {
             if (!freeCasses.isEmpty()) {
                 List<FireEmployeeCommand> fireEmployeeCommands = new ArrayList<>();
-                for (int i = 0; i < notOnLine.size(); i++) {
+                for (Employee employee : notOnLine) {
                     FireEmployeeCommand fireEmployeeCommand = new FireEmployeeCommand();
-                    fireEmployeeCommand.setEmployeeId(notOnLine.get(i).getId());
+                    fireEmployeeCommand.setEmployeeId(employee.getId());
                     fireEmployeeCommands.add(fireEmployeeCommand);
                 }
                 request.setFireEmployeeCommands(fireEmployeeCommands);
@@ -148,10 +112,10 @@ public class PerfectStorePlayer implements ApplicationListener<ApplicationReadyE
 
         if (!freeCasses.isEmpty()) {
             List<HireEmployeeCommand> hireEmployeeCommands = new ArrayList<>();
-            for (int i = 0; i < freeCasses.size(); i++) {
+            for (CheckoutLine freeCass : freeCasses) {
                 HireEmployeeCommand hireEmployeeCommand = new HireEmployeeCommand();
                 hireEmployeeCommand.setExperience(exp);
-                hireEmployeeCommand.setCheckoutLineId(freeCasses.get(i).getId());
+                hireEmployeeCommand.setCheckoutLineId(freeCass.getId());
                 hireEmployeeCommands.add(hireEmployeeCommand);
             }
             request.setHireEmployeeCommands(hireEmployeeCommands);
@@ -172,8 +136,6 @@ public class PerfectStorePlayer implements ApplicationListener<ApplicationReadyE
                 .collect(Collectors.toList());
         Collections.reverse(racks);
 
-        myRacksCount = racks.size();
-
         for (int i = 0; i < Math.min(racks.size(), productsInStock.size()); i++) {
             RackCell rack = racks.get(i);
             Product producttoPutOnRack = productsInStock.get(i);
@@ -184,11 +146,11 @@ public class PerfectStorePlayer implements ApplicationListener<ApplicationReadyE
             }
 
             Integer orderQuantity = rack.getCapacity() - productQuantity;
-            if (orderQuantity == rack.getCapacity()) {
+            if (orderQuantity.equals(rack.getCapacity())) {
                 if (producttoPutOnRack.getInStock() < orderQuantity) {
                     BuyStockCommand command = new BuyStockCommand();
                     command.setProductId(producttoPutOnRack.getId());
-                    command.setQuantity(Math.max(initialQuantity, orderQuantity));
+                    command.setQuantity(initialQuantity);
                     buyStockCommands.add(command);
                 }
                 PutOnRackCellCommand command2 = new PutOnRackCellCommand();
@@ -215,20 +177,6 @@ public class PerfectStorePlayer implements ApplicationListener<ApplicationReadyE
                 .collect(Collectors.toList())) {
             popularProducts.addAll(x.getBasket());
         }
-
-        customersTotal += currentWorldResponse.getCustomers().stream()
-                .filter(customer -> customer.getMode().equals(Customer.ModeEnum.AT_CHECKOUT))
-                .collect(Collectors.toList()).size();
-
-        currentWorldResponse.getCustomers().stream()
-                .filter(customer -> customer.getMode().equals(Customer.ModeEnum.AT_CHECKOUT))
-                .forEach(customer -> {
-                    List<ProductInBasket> basket = customer.getBasket();
-                    for (ProductInBasket p : basket) {
-                        productsTotal += p.getProductCount();
-                    }
-                });
-
 
         popularProducts = popularProducts.stream().distinct().sorted(Comparator.comparing(ProductInBasket::getPrie)).collect(Collectors.toList());
 
@@ -265,14 +213,13 @@ public class PerfectStorePlayer implements ApplicationListener<ApplicationReadyE
                     .findFirst()
                     .orElse(null);
 
-            if (orderQuantity == rack.getCapacity()) {
+            if (orderQuantity.equals(rack.getCapacity())) {
                 if (x != null) {
                     if (x.getInStock() < orderQuantity) {
                         BuyStockCommand command = new BuyStockCommand();
                         command.setProductId(x.getId());
-                        command.setQuantity(orderQuantity * quantity);
+                        command.setQuantity(initialQuantity);
                         buyPopularProducts.add(command);
-                        log.info("покупаю " + x.getName() + " " + orderQuantity * quantity + " штук");
                     }
                     PutOnRackCellCommand command2 = new PutOnRackCellCommand();
                     command2.setProductId(x.getId());
@@ -314,13 +261,6 @@ public class PerfectStorePlayer implements ApplicationListener<ApplicationReadyE
             notOnLine = notOnLine.stream().filter(x -> !setToLine.contains(x)).collect(Collectors.toList());
         setToLine.clear();
 
-        StringBuilder sb = new StringBuilder();
-        sb.append("freeCasses.size()" + freeCasses.size() + "\r\n");
-        sb.append("employees().size()" + currentWorldResponse.getEmployees().size() + "\r\n");
-        sb.append("notOnLine.size()" + notOnLine.size() + "\r\n");
-        sb.append("onLine.size()" + onLine.size() + "\r\n");
-        log.info(sb.toString());
-
         if (freeCasses.size() > 0 && notOnLine.size() > 0) {
             List<SetOnCheckoutLineCommand> toCheckoutLineCommands = new ArrayList<>();
             for (int i = 0; i < freeCasses.size(); i++) {
@@ -347,7 +287,7 @@ public class PerfectStorePlayer implements ApplicationListener<ApplicationReadyE
 
             } catch (ApiException e) {
                 try {
-                    Thread.currentThread().sleep(1000L);
+                    Thread.sleep(1000L);
                 } catch (InterruptedException interruptedException) {
                     e.printStackTrace();
                 }
